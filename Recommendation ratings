@@ -1,0 +1,45 @@
+from surprise import Dataset, Reader, KNNBasic
+from surprise.model_selection import train_test_split
+from surprise import accuracy
+
+# Load the MovieLens 100k dataset
+data = Dataset.load_builtin('ml-100k')
+
+# Split the dataset into training and testing sets
+trainset, testset = train_test_split(data, test_size=0.2)
+
+# Use the KNNBasic collaborative filtering algorithm
+sim_options = {
+    'name': 'cosine',
+    'user_based': True  # User-based collaborative filtering
+}
+
+algo = KNNBasic(sim_options=sim_options)
+
+# Train the algorithm on the training set
+algo.fit(trainset)
+
+# Make predictions on the test set
+predictions = algo.test(testset)
+
+# Evaluate the model using RMSE (Root Mean Squared Error)
+accuracy.rmse(predictions)
+
+# Recommend items for a specific user
+user_id = str(196)  # Change to the desired user ID
+items_to_recommend = []
+for item_id in range(1, 1683):  # Assume there are 1682 items in the dataset
+    if not trainset.knows_item(item_id):
+        predicted_rating = algo.predict(user_id, item_id).est
+        items_to_recommend.append((item_id, predicted_rating))
+
+# Sort the recommended items by predicted rating in descending order
+items_to_recommend.sort(key=lambda x: x[1], reverse=True)
+
+# Display the top N recommended items
+top_n = 5  # Change to the desired number of recommendations
+top_recommendations = items_to_recommend[:top_n]
+
+print(f"Top {top_n} recommended items for user {user_id}:")
+for item_id, predicted_rating in top_recommendations:
+    print(f"Item ID: {item_id}, Predicted Rating: {predicted_rating}")
